@@ -142,6 +142,34 @@
       border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;
     }
 
+    /* Status timeline */
+    .status-timeline {
+      display: flex; flex-direction: column; gap: 0;
+      margin: 20px 0; width: 100%; max-width: 280px; text-align: left;
+    }
+    .status-step {
+      display: flex; align-items: flex-start; gap: 12px;
+      position: relative;
+    }
+    .status-step:not(:last-child)::after {
+      content: ''; position: absolute; left: 11px; top: 26px;
+      width: 2px; height: 28px; background: #eee;
+    }
+    .status-step.done::after { background: #27ae60; }
+    .step-dot {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid #ddd; background: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; margin-top: 2px;
+    }
+    .status-step.done .step-dot { background: #27ae60; border-color: #27ae60; color: white; }
+    .status-step.active .step-dot { border-color: #e74c3c; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.4); } 50% { box-shadow: 0 0 0 6px rgba(231,76,60,0); } }
+    .step-label { font-size: 0.85rem; font-weight: 600; color: #999; padding: 4px 0 20px; }
+    .status-step.done .step-label { color: #27ae60; }
+    .status-step.active .step-label { color: #e74c3c; }
+    .sse-badge { font-size: 0.72rem; color: #27ae60; margin-top: 4px; }
+
     /* Loading */
     #loading { text-align: center; padding: 40px; color: #999; }
     .empty { text-align: center; padding: 40px; color: #bbb; }
@@ -190,7 +218,25 @@
   <h2>Pesanan Terkirim!</h2>
   <p>Nomor pesanan Anda:</p>
   <div class="code" id="order-code-display"></div>
-  <p>Silakan tunggu, pesanan sedang diproses oleh dapur.</p>
+  <div class="status-timeline">
+    <div class="status-step done" id="step-pending">
+      <div class="step-dot">✓</div>
+      <div class="step-label">Pesanan diterima</div>
+    </div>
+    <div class="status-step" id="step-processing">
+      <div class="step-dot"></div>
+      <div class="step-label">Sedang diproses dapur</div>
+    </div>
+    <div class="status-step" id="step-ready">
+      <div class="step-dot"></div>
+      <div class="step-label">Siap disajikan</div>
+    </div>
+    <div class="status-step" id="step-done">
+      <div class="step-dot"></div>
+      <div class="step-label">Selesai</div>
+    </div>
+  </div>
+  <p class="sse-badge" id="sse-status">⚡ Memantau status secara realtime...</p>
   <button id="new-order-btn" onclick="resetOrder()">Pesan Lagi</button>
 </div>
 
@@ -201,8 +247,10 @@
 
   // ── STATE ──────────────────────────────────────────────────────────────────
   let allMenus = [];
-  let cart = {};       // { menu_id: { menu, qty, note } }
+  let cart = {};
   let activeCategory = 'Semua';
+  let sseConn = null;
+  let currentOrderCode = null;
 
   // ── INIT ───────────────────────────────────────────────────────────────────
   async function init() {
@@ -355,8 +403,11 @@
       if (!res.ok) throw new Error(data.error || 'Gagal mengirim');
 
       closeCart();
-      document.getElementById('order-code-display').textContent = data.order.order_code;
+      currentOrderCode = data.order.order_code;
+      document.getElementById('order-code-display').textContent = currentOrderCode;
+      resetStatusTimeline();
       document.getElementById('success-screen').classList.add('show');
+      startOrderTracking(currentOrderCode);
     } catch(e) {
       alert('❌ ' + e.message);
       btn.disabled = false;
@@ -365,13 +416,62 @@
   }
 
   function resetOrder() {
+    if (sseConn) { sseConn.close(); sseConn = null; }
     cart = {};
+    currentOrderCode = null;
     document.getElementById('table-input').value = '';
     document.getElementById('name-input').value = '';
     document.getElementById('order-note').value = '';
     document.getElementById('success-screen').classList.remove('show');
     updateCartUI();
     renderMenus();
+  }
+
+  // ── ORDER TRACKING ─────────────────────────────────────────────────────────
+  const STATUS_ORDER = ['pending', 'processing', 'ready', 'done'];
+  const STEP_IDS = { pending: 'step-pending', processing: 'step-processing', ready: 'step-ready', done: 'step-done' };
+
+  function resetStatusTimeline() {
+    Object.values(STEP_IDS).forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('done', 'active');
+    });
+    document.getElementById('step-pending').classList.add('done');
+    document.getElementById('sse-status').textContent = '⚡ Memantau status secara realtime...';
+  }
+
+  function applyStatus(status) {
+    const idx = STATUS_ORDER.indexOf(status);
+    STATUS_ORDER.forEach((s, i) => {
+      const el = document.getElementById(STEP_IDS[s]);
+      if (i < idx) { el.classList.add('done'); el.classList.remove('active'); }
+      else if (i === idx) { el.classList.add('done'); el.classList.remove('active'); }
+      else { el.classList.remove('done', 'active'); }
+    });
+    if (status === 'done') {
+      document.getElementById('sse-status').textContent = '✅ Pesanan selesai!';
+    }
+  }
+
+  function startOrderTracking(orderCode) {
+    if (sseConn) sseConn.close();
+    sseConn = new EventSource(`${API_BASE}/events`);
+
+    sseConn.addEventListener('order_status', (e) => {
+      const data = JSON.parse(e.data);
+      if (data.order_code !== orderCode) return;
+      applyStatus(data.status);
+      if (data.status === 'done' || data.status === 'cancelled') {
+        sseConn.close(); sseConn = null;
+        if (data.status === 'cancelled') {
+          document.getElementById('sse-status').textContent = '❌ Pesanan dibatalkan oleh kasir.';
+        }
+      }
+    });
+
+    sseConn.onerror = () => {
+      document.getElementById('sse-status').textContent = '🔴 Koneksi terputus, mencoba ulang...';
+    };
   }
 
   // ── TABLE LABEL ────────────────────────────────────────────────────────────

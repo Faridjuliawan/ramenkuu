@@ -10,6 +10,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'ramenkuu-secret-key-2024';
 
+// ─── SSE Clients ──────────────────────────────────────────────────────────────
+const sseClients = new Set();
+
+function broadcast(event, data) {
+  const msg = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  sseClients.forEach(client => client.write(msg));
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
@@ -132,6 +140,17 @@ function genOrderCode() {
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({ message: '🍜 RamenKuu Server is running!', version: '1.0.0' });
+});
+
+// ── SSE Stream ────────────────────────────────────────────────────────────────
+app.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  res.write('event: connected\ndata: {}\n\n');
+  sseClients.add(res);
+  req.on('close', () => sseClients.delete(res));
 });
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -296,6 +315,17 @@ app.post('/orders', (req, res) => {
   const orderId = createOrder();
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
   const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
+
+  broadcast('new_order', {
+    id: order.id,
+    order_code: order.order_code,
+    table_no: order.table_no,
+    customer_name: order.customer_name,
+    total: order.total,
+    item_count: orderItems.length,
+    items: orderItems.map(i => ({ name: i.menu_name, qty: i.qty }))
+  });
+
   res.status(201).json({ message: 'Order berhasil dibuat', order: { ...order, items: orderItems } });
 });
 
@@ -309,6 +339,9 @@ app.put('/orders/:id/status', authMiddleware(['owner','kasir']), (req, res) => {
 
   db.prepare("UPDATE orders SET status=?, kasir_id=?, updated_at=datetime('now','localtime') WHERE id=?")
     .run(status, req.user.id, req.params.id);
+
+  broadcast('order_status', { order_code: order.order_code, status });
+
   res.json({ message: `Status order diupdate ke ${status}` });
 });
 

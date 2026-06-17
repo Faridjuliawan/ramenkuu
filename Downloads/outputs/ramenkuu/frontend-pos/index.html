@@ -128,6 +128,22 @@
       padding: 3px 10px; border-radius: 12px;
       font-size: 0.75rem; background: #eafaf1; color: #27ae60;
     }
+    .auto-badge.disconnected {
+      background: #fdf2f2; color: #e74c3c;
+    }
+
+    /* New order notification */
+    #order-notif {
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-20px);
+      background: #e74c3c; color: white; padding: 12px 20px;
+      border-radius: 12px; font-size: 0.9rem; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(231,76,60,0.4);
+      opacity: 0; transition: all .3s; z-index: 999; pointer-events: none;
+      white-space: nowrap;
+    }
+    #order-notif.show {
+      opacity: 1; transform: translateX(-50%) translateY(0);
+    }
 
     /* Dashboard */
     .stat-grid {
@@ -241,7 +257,7 @@
     <div id="refresh-bar">
       <button id="refresh-btn" onclick="loadOrders()">🔄 Refresh</button>
       <span id="last-refresh">-</span>
-      <span class="auto-badge">Auto 30s</span>
+      <span class="auto-badge" id="sse-badge">⚡ Realtime</span>
     </div>
     <div id="filter-bar">
       <button class="filter-btn active" onclick="filterOrders('all')">Semua</button>
@@ -290,6 +306,7 @@
   </div>
 </div>
 
+<div id="order-notif"></div>
 <div id="toast"></div>
 
 <script>
@@ -301,7 +318,8 @@
   let allOrders = [];
   let activeFilter = 'all';
   let editMenuId = null;
-  let refreshTimer = null;
+  let sseConn = null;
+  let notifTimer = null;
 
   // ── INIT ───────────────────────────────────────────────────────────────────
   if (token && currentUser) {
@@ -341,7 +359,7 @@
     localStorage.removeItem('rk_token');
     localStorage.removeItem('rk_user');
     token = null; currentUser = null;
-    clearInterval(refreshTimer);
+    if (sseConn) { sseConn.close(); sseConn = null; }
     document.getElementById('app').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('login-pass').value = '';
@@ -352,14 +370,49 @@
     document.getElementById('app').style.display = 'block';
     document.getElementById('user-badge').textContent = `${currentUser.name} (${currentUser.role})`;
 
-    // owner-only tabs
     if (currentUser.role !== 'owner') {
       document.getElementById('tab-dashboard').style.display = 'none';
       document.getElementById('tab-menu').style.display = 'none';
     }
 
     loadOrders();
-    refreshTimer = setInterval(loadOrders, 30000);
+    connectSSE();
+  }
+
+  function connectSSE() {
+    if (sseConn) sseConn.close();
+    const badge = document.getElementById('sse-badge');
+    sseConn = new EventSource(`${API_BASE}/events`);
+
+    sseConn.addEventListener('connected', () => {
+      badge.textContent = '⚡ Realtime';
+      badge.classList.remove('disconnected');
+    });
+
+    sseConn.addEventListener('new_order', (e) => {
+      const order = JSON.parse(e.data);
+      showOrderNotif(order);
+      loadOrders();
+    });
+
+    sseConn.addEventListener('order_status', () => {
+      loadOrders();
+    });
+
+    sseConn.onerror = () => {
+      badge.textContent = '🔴 Offline';
+      badge.classList.add('disconnected');
+      sseConn.close();
+      setTimeout(connectSSE, 5000);
+    };
+  }
+
+  function showOrderNotif(order) {
+    const el = document.getElementById('order-notif');
+    el.textContent = `🔔 Order baru! Meja ${order.table_no || '-'} — ${order.item_count} item`;
+    el.classList.add('show');
+    clearTimeout(notifTimer);
+    notifTimer = setTimeout(() => el.classList.remove('show'), 4000);
   }
 
   // ── API HELPER ─────────────────────────────────────────────────────────────
