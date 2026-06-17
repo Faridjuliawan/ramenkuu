@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RamenKuu POS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+
+    /* Login */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; background: linear-gradient(135deg, #c0392b, #e74c3c);
+    }
+    #login-box {
+      background: white; border-radius: 16px; padding: 36px 28px;
+      width: 100%; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    #login-box h1 { text-align: center; font-size: 1.5rem; margin-bottom: 6px; }
+    #login-box p { text-align: center; color: #999; font-size: 0.85rem; margin-bottom: 24px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.85rem; margin-bottom: 4px; color: #555; }
+    .field input {
+      width: 100%; padding: 10px 12px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 0.95rem;
+    }
+    #login-btn {
+      width: 100%; padding: 12px; background: #e74c3c; color: white;
+      border: none; border-radius: 10px; font-size: 1rem;
+      font-weight: 600; cursor: pointer; margin-top: 6px;
+    }
+    #login-error { color: #e74c3c; font-size: 0.85rem; margin-top: 8px; text-align: center; }
+
+    /* App */
+    #app { display: none; }
+
+    /* Topbar */
+    #topbar {
+      background: #c0392b; color: white;
+      padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    #topbar h1 { font-size: 1.1rem; flex: 1; }
+    #topbar .user-badge {
+      background: rgba(255,255,255,0.2); padding: 4px 12px;
+      border-radius: 20px; font-size: 0.8rem;
+    }
+    #logout-btn {
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4);
+      color: white; padding: 4px 12px; border-radius: 6px;
+      cursor: pointer; font-size: 0.8rem;
+    }
+
+    /* Nav tabs */
+    #nav-tabs {
+      display: flex; background: white; border-bottom: 2px solid #eee;
+    }
+    .nav-tab {
+      flex: 1; padding: 12px; text-align: center;
+      border: none; background: none; cursor: pointer;
+      font-size: 0.9rem; color: #888; font-weight: 500;
+      transition: all .2s; border-bottom: 3px solid transparent;
+    }
+    .nav-tab.active { color: #e74c3c; border-bottom-color: #e74c3c; }
+
+    /* Screens */
+    .screen { display: none; padding: 16px; }
+    .screen.active { display: block; }
+
+    /* Orders */
+    #filter-bar {
+      display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto;
+    }
+    .filter-btn {
+      padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd;
+      background: white; cursor: pointer; white-space: nowrap;
+      font-size: 0.82rem; transition: all .2s;
+    }
+    .filter-btn.active { border-color: #e74c3c; background: #e74c3c; color: white; }
+
+    .order-card {
+      background: white; border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      border-left: 4px solid #ddd;
+    }
+    .order-card.pending    { border-left-color: #f39c12; }
+    .order-card.processing { border-left-color: #3498db; }
+    .order-card.ready      { border-left-color: #27ae60; }
+    .order-card.done       { border-left-color: #95a5a6; }
+    .order-card.cancelled  { border-left-color: #e74c3c; opacity: 0.6; }
+
+    .order-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+    .order-code { font-weight: 700; font-size: 0.95rem; }
+    .order-meta { font-size: 0.78rem; color: #888; }
+    .status-badge {
+      padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+      margin-left: auto; white-space: nowrap;
+    }
+    .badge-pending    { background: #fef9e7; color: #f39c12; border: 1px solid #f39c12; }
+    .badge-processing { background: #eaf4fd; color: #3498db; border: 1px solid #3498db; }
+    .badge-ready      { background: #eafaf1; color: #27ae60; border: 1px solid #27ae60; }
+    .badge-done       { background: #f4f4f4; color: #95a5a6; border: 1px solid #ccc; }
+    .badge-cancelled  { background: #fdf2f2; color: #e74c3c; border: 1px solid #e74c3c; }
+
+    .order-items { font-size: 0.83rem; color: #555; margin-bottom: 10px; line-height: 1.6; }
+    .order-footer { display: flex; align-items: center; gap: 8px; }
+    .order-total { font-weight: 700; color: #e74c3c; font-size: 0.9rem; margin-right: auto; }
+    .action-btn {
+      padding: 6px 14px; border-radius: 8px; border: none;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-process { background: #3498db; color: white; }
+    .btn-ready   { background: #27ae60; color: white; }
+    .btn-done    { background: #95a5a6; color: white; }
+    .btn-cancel  { background: #fdf2f2; color: #e74c3c; border: 1px solid #e74c3c; }
+
+    /* Refresh bar */
+    #refresh-bar {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    #refresh-bar span { font-size: 0.8rem; color: #999; }
+    #refresh-btn {
+      padding: 5px 14px; border-radius: 8px; border: 1px solid #ddd;
+      background: white; cursor: pointer; font-size: 0.82rem;
+    }
+    .auto-badge {
+      padding: 3px 10px; border-radius: 12px;
+      font-size: 0.75rem; background: #eafaf1; color: #27ae60;
+    }
+
+    /* Dashboard */
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white; border-radius: 12px; padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07); text-align: center;
+    }
+    .stat-card .val { font-size: 1.5rem; font-weight: 700; color: #e74c3c; }
+    .stat-card .lbl { font-size: 0.78rem; color: #888; margin-top: 2px; }
+
+    .section-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 10px; color: #555; }
+    .top-menu-item {
+      background: white; border-radius: 10px; padding: 10px 14px;
+      margin-bottom: 8px; display: flex; align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .top-menu-item .rank { width: 24px; height: 24px; border-radius: 50%; background: #e74c3c; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; margin-right: 10px; }
+    .top-menu-item .mn { flex: 1; font-size: 0.88rem; font-weight: 500; }
+    .top-menu-item .mq { font-size: 0.8rem; color: #888; }
+
+    /* Menu management (owner) */
+    .menu-row {
+      background: white; border-radius: 10px; padding: 12px 14px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .menu-row .mn { flex: 1; font-size: 0.9rem; font-weight: 500; }
+    .menu-row .mc { font-size: 0.75rem; color: #999; }
+    .menu-row .mp { font-weight: 700; color: #e74c3c; font-size: 0.9rem; }
+    .avail-badge { padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; }
+    .avail-y { background: #eafaf1; color: #27ae60; }
+    .avail-n { background: #fdf2f2; color: #e74c3c; }
+
+    #add-menu-btn {
+      position: fixed; bottom: 80px; right: 20px;
+      width: 50px; height: 50px; border-radius: 50%;
+      background: #e74c3c; color: white; border: none;
+      font-size: 1.5rem; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(231,76,60,0.4);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 500;
+    }
+    .modal-overlay.show { display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box {
+      background: white; border-radius: 16px; padding: 24px;
+      width: 100%; max-width: 400px;
+    }
+    .modal-box h3 { margin-bottom: 16px; }
+    .modal-box .field { margin-bottom: 12px; }
+    .modal-box .field label { display: block; font-size: 0.82rem; margin-bottom: 4px; color: #555; }
+    .modal-box .field input, .modal-box .field select, .modal-box .field textarea {
+      width: 100%; padding: 9px 11px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem;
+    }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #e74c3c; color: white; }
+    .btn-secondary { background: #f5f5f5; color: #555; }
+
+    .empty { text-align: center; padding: 40px; color: #bbb; }
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #333; color: white; padding: 10px 20px; border-radius: 8px;
+      font-size: 0.85rem; opacity: 0; transition: all .3s; z-index: 999; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div id="login-box">
+    <h1>🍜 RamenKuu POS</h1>
+    <p>Login untuk melanjutkan</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="owner@ramenkuu.com" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button id="login-btn" onclick="doLogin()">Masuk</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="topbar">
+    <h1>🍜 RamenKuu POS</h1>
+    <span class="user-badge" id="user-badge">-</span>
+    <button id="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
+
+  <div id="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('orders')">📋 Order</button>
+    <button class="nav-tab" onclick="switchTab('dashboard')" id="tab-dashboard">📊 Dashboard</button>
+    <button class="nav-tab" onclick="switchTab('menu')" id="tab-menu">🍜 Menu</button>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <div class="screen active" id="screen-orders">
+    <div id="refresh-bar">
+      <button id="refresh-btn" onclick="loadOrders()">🔄 Refresh</button>
+      <span id="last-refresh">-</span>
+      <span class="auto-badge">Auto 30s</span>
+    </div>
+    <div id="filter-bar">
+      <button class="filter-btn active" onclick="filterOrders('all')">Semua</button>
+      <button class="filter-btn" onclick="filterOrders('pending')">Pending</button>
+      <button class="filter-btn" onclick="filterOrders('processing')">Proses</button>
+      <button class="filter-btn" onclick="filterOrders('ready')">Siap</button>
+      <button class="filter-btn" onclick="filterOrders('done')">Selesai</button>
+    </div>
+    <div id="orders-list"><div class="empty">Memuat order...</div></div>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div class="screen" id="screen-dashboard">
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card"><div class="val">-</div><div class="lbl">Order Hari Ini</div></div>
+      <div class="stat-card"><div class="val">-</div><div class="lbl">Pendapatan</div></div>
+      <div class="stat-card"><div class="val">-</div><div class="lbl">Antrian Aktif</div></div>
+      <div class="stat-card"><div class="val">-</div><div class="lbl">Menu Aktif</div></div>
+    </div>
+    <div class="section-title">🏆 Menu Terlaris Hari Ini</div>
+    <div id="top-menu-list"><div class="empty">Belum ada data</div></div>
+  </div>
+
+  <!-- MENU TAB -->
+  <div class="screen" id="screen-menu">
+    <div id="menu-management-list"><div class="empty">Memuat menu...</div></div>
+    <button id="add-menu-btn" onclick="openAddMenu()" title="Tambah Menu">+</button>
+  </div>
+</div>
+
+<!-- Add/Edit Menu Modal -->
+<div class="modal-overlay" id="menu-modal">
+  <div class="modal-box">
+    <h3 id="menu-modal-title">Tambah Menu</h3>
+    <div class="field"><label>Nama</label><input type="text" id="fm-name" /></div>
+    <div class="field"><label>Kategori</label><input type="text" id="fm-cat" placeholder="Ramen, Side Dish, Minuman..." /></div>
+    <div class="field"><label>Harga</label><input type="number" id="fm-price" /></div>
+    <div class="field"><label>Deskripsi</label><textarea id="fm-desc" rows="2"></textarea></div>
+    <div class="field"><label>Status</label>
+      <select id="fm-avail"><option value="1">Tersedia</option><option value="0">Tidak Tersedia</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeMenuModal()">Batal</button>
+      <button class="btn-primary" onclick="saveMenu()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API_BASE = window.API_BASE || 'https://ramenkuu-server.up.railway.app';
+  // Ganti URL di atas dengan URL Railway Anda setelah deploy
+
+  let token = localStorage.getItem('rk_token');
+  let currentUser = JSON.parse(localStorage.getItem('rk_user') || 'null');
+  let allOrders = [];
+  let activeFilter = 'all';
+  let editMenuId = null;
+  let refreshTimer = null;
+
+  // ── INIT ───────────────────────────────────────────────────────────────────
+  if (token && currentUser) {
+    showApp();
+  }
+
+  // ── AUTH ───────────────────────────────────────────────────────────────────
+  async function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('login-error');
+    if (!email || !pass) { err.textContent = 'Isi email dan password'; return; }
+
+    btn.disabled = true; btn.textContent = 'Masuk...';
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      token = data.token;
+      currentUser = data.user;
+      localStorage.setItem('rk_token', token);
+      localStorage.setItem('rk_user', JSON.stringify(currentUser));
+      err.textContent = '';
+      showApp();
+    } catch(e) {
+      err.textContent = '❌ ' + e.message;
+      btn.disabled = false; btn.textContent = 'Masuk';
+    }
+  }
+
+  function doLogout() {
+    localStorage.removeItem('rk_token');
+    localStorage.removeItem('rk_user');
+    token = null; currentUser = null;
+    clearInterval(refreshTimer);
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-pass').value = '';
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('user-badge').textContent = `${currentUser.name} (${currentUser.role})`;
+
+    // owner-only tabs
+    if (currentUser.role !== 'owner') {
+      document.getElementById('tab-dashboard').style.display = 'none';
+      document.getElementById('tab-menu').style.display = 'none';
+    }
+
+    loadOrders();
+    refreshTimer = setInterval(loadOrders, 30000);
+  }
+
+  // ── API HELPER ─────────────────────────────────────────────────────────────
+  async function api(method, path, body) {
+    const opts = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API_BASE + path, opts);
+    if (res.status === 401) { doLogout(); return null; }
+    return res.json();
+  }
+
+  // ── TABS ───────────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.nav-tab').forEach((t,i) => t.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const tabs = ['orders','dashboard','menu'];
+    const idx = tabs.indexOf(tab);
+    document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+    document.getElementById(`screen-${tab}`).classList.add('active');
+    if (tab === 'dashboard') loadDashboard();
+    if (tab === 'menu') loadMenuManagement();
+  }
+
+  // ── ORDERS ─────────────────────────────────────────────────────────────────
+  async function loadOrders() {
+    const data = await api('GET', '/orders');
+    if (!data) return;
+    allOrders = data;
+    renderOrders();
+    const now = new Date();
+    document.getElementById('last-refresh').textContent = `Update: ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  }
+
+  function filterOrders(status) {
+    activeFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    renderOrders();
+  }
+
+  function renderOrders() {
+    const filtered = activeFilter === 'all'
+      ? allOrders.filter(o => o.status !== 'cancelled')
+      : allOrders.filter(o => o.status === activeFilter);
+
+    const el = document.getElementById('orders-list');
+    if (!filtered.length) { el.innerHTML = '<div class="empty">Tidak ada order</div>'; return; }
+
+    const statusLabel = { pending:'Menunggu', processing:'Diproses', ready:'Siap Antar', done:'Selesai', cancelled:'Dibatal' };
+    el.innerHTML = filtered.map(o => {
+      const itemsText = (o.items||[]).map(i => `${i.menu_name} ×${i.qty}`).join(', ');
+      let actions = '';
+      if (o.status === 'pending')    actions = `<button class="action-btn btn-process" onclick="updateStatus(${o.id},'processing')">Proses</button><button class="action-btn btn-cancel" onclick="updateStatus(${o.id},'cancelled')">Batal</button>`;
+      if (o.status === 'processing') actions = `<button class="action-btn btn-ready" onclick="updateStatus(${o.id},'ready')">Siap</button>`;
+      if (o.status === 'ready')      actions = `<button class="action-btn btn-done" onclick="updateStatus(${o.id},'done')">Selesai</button>`;
+
+      return `<div class="order-card ${o.status}">
+        <div class="order-header">
+          <div>
+            <div class="order-code">${o.order_code}</div>
+            <div class="order-meta">Meja ${o.table_no||'-'} · ${o.customer_name||'Tanpa nama'} · ${formatTime(o.created_at)}</div>
+          </div>
+          <span class="status-badge badge-${o.status}">${statusLabel[o.status]||o.status}</span>
+        </div>
+        <div class="order-items">${itemsText||'-'}</div>
+        ${o.note ? `<div style="font-size:0.78rem;color:#e67e22;margin-bottom:8px">📝 ${o.note}</div>` : ''}
+        <div class="order-footer">
+          <span class="order-total">Rp ${o.total.toLocaleString('id-ID')}</span>
+          ${actions}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function updateStatus(id, status) {
+    const data = await api('PUT', `/orders/${id}/status`, { status });
+    if (data) { toast('Status diupdate ✓'); loadOrders(); }
+  }
+
+  // ── DASHBOARD ──────────────────────────────────────────────────────────────
+  async function loadDashboard() {
+    const data = await api('GET', '/dashboard');
+    if (!data) return;
+    const s = data.summary;
+    const grid = document.getElementById('stat-grid');
+    grid.innerHTML = `
+      <div class="stat-card"><div class="val">${s.todayOrders}</div><div class="lbl">Order Hari Ini</div></div>
+      <div class="stat-card"><div class="val">Rp ${(s.todayRevenue/1000).toFixed(0)}k</div><div class="lbl">Pendapatan</div></div>
+      <div class="stat-card"><div class="val">${s.pendingOrders}</div><div class="lbl">Antrian Aktif</div></div>
+      <div class="stat-card"><div class="val">${s.totalMenu}</div><div class="lbl">Menu Aktif</div></div>
+    `;
+    const top = document.getElementById('top-menu-list');
+    if (!data.topMenu.length) { top.innerHTML = '<div class="empty">Belum ada penjualan</div>'; return; }
+    top.innerHTML = data.topMenu.map((m,i) => `
+      <div class="top-menu-item">
+        <div class="rank">${i+1}</div>
+        <div class="mn">${m.menu_name}</div>
+        <div class="mq">${m.total_qty}x · Rp ${m.total_revenue.toLocaleString('id-ID')}</div>
+      </div>`).join('');
+  }
+
+  // ── MENU MANAGEMENT ────────────────────────────────────────────────────────
+  async function loadMenuManagement() {
+    const data = await api('GET', '/menu');
+    if (!data) return;
+    const el = document.getElementById('menu-management-list');
+    el.innerHTML = data.map(m => `
+      <div class="menu-row">
+        <div style="flex:1">
+          <div class="mn">${m.name}</div>
+          <div class="mc">${m.category}</div>
+        </div>
+        <div class="mp">Rp ${m.price.toLocaleString('id-ID')}</div>
+        <span class="avail-badge ${m.available?'avail-y':'avail-n'}">${m.available?'Aktif':'Nonaktif'}</span>
+        <button onclick="openEditMenu(${JSON.stringify(m).replace(/"/g,'&quot;')})" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;font-size:0.8rem">Edit</button>
+      </div>`).join('');
+  }
+
+  function openAddMenu() {
+    editMenuId = null;
+    document.getElementById('menu-modal-title').textContent = 'Tambah Menu';
+    ['fm-name','fm-cat','fm-price','fm-desc'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fm-avail').value = '1';
+    document.getElementById('menu-modal').classList.add('show');
+  }
+
+  function openEditMenu(m) {
+    editMenuId = m.id;
+    document.getElementById('menu-modal-title').textContent = 'Edit Menu';
+    document.getElementById('fm-name').value = m.name;
+    document.getElementById('fm-cat').value = m.category;
+    document.getElementById('fm-price').value = m.price;
+    document.getElementById('fm-desc').value = m.description || '';
+    document.getElementById('fm-avail').value = m.available;
+    document.getElementById('menu-modal').classList.add('show');
+  }
+
+  function closeMenuModal() {
+    document.getElementById('menu-modal').classList.remove('show');
+  }
+
+  async function saveMenu() {
+    const payload = {
+      name: document.getElementById('fm-name').value,
+      category: document.getElementById('fm-cat').value,
+      price: parseFloat(document.getElementById('fm-price').value),
+      description: document.getElementById('fm-desc').value,
+      available: parseInt(document.getElementById('fm-avail').value)
+    };
+    if (!payload.name || !payload.category || isNaN(payload.price)) {
+      alert('Nama, kategori, dan harga wajib diisi'); return;
+    }
+    if (editMenuId) {
+      await api('PUT', `/menu/${editMenuId}`, payload);
+      toast('Menu diupdate ✓');
+    } else {
+      await api('POST', '/menu', payload);
+      toast('Menu ditambah ✓');
+    }
+    closeMenuModal();
+    loadMenuManagement();
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
+  function formatTime(dt) {
+    if (!dt) return '-';
+    const d = new Date(dt);
+    return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
