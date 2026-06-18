@@ -378,6 +378,14 @@ app.get('/dashboard', authMiddleware(['owner']), (req, res) => {
   });
 });
 
+// ─── Serve Frontend Files ─────────────────────────────────────────────────────
+const frontendPosPath = path.join(__dirname, '../frontend-pos/index.html');
+const frontendOrderPath = path.join(__dirname, '../frontend-order/index.html');
+
+app.get('/pos', (req, res) => res.sendFile(frontendPosPath));
+app.get('/order', (req, res) => res.sendFile(frontendOrderPath));
+app.get('/', (req, res) => res.redirect('/order'));
+
 // ─── Start Server ─────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🍜 RamenKuu Server running on port ${PORT}`);
