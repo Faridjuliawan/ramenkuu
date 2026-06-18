@@ -1,486 +1,1096 @@
 <!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RamenKuu - Order</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #fff8f0; color: #333; }
+<html lang="id"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-    /* Header */
-    header {
-      background: linear-gradient(135deg, #c0392b, #e74c3c);
-      color: white; padding: 16px 20px;
-      display: flex; align-items: center; gap: 12px;
-      position: sticky; top: 0; z-index: 100;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    header h1 { font-size: 1.4rem; }
-    header span { font-size: 0.85rem; opacity: 0.85; margin-left: auto; }
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ramenku — Order Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:       #9B1C1C;
+  --red-dark:  #7F1D1D;
+  --red-light: #FEF2F2;
+  --red-bd:    #FECACA;
+  --cream:     #FFFEF9;
+  --cream-2:   #FAF7EE;
+  --border:    #E8E0CC;
+  --border-2:  #D6CDB4;
+  --text:      #1C1917;
+  --text-2:    #44403C;
+  --muted:     #78716C;
+  --dim:       #A8A29E;
+  --success:   #15803D;
+  --success-bg:#F0FDF4;
+  --success-bd:#BBF7D0;
+  --serif:     'Cormorant Garamond', Georgia, serif;
+  --sans:      'Inter', sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+  --radius:    4px;
+  --shadow:    0 2px 12px rgba(92,60,30,0.1);
+  --shadow-lg: 0 8px 32px rgba(92,60,30,0.14);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--sans);
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 110px;
+}
 
-    /* Config bar */
-    #config-bar {
-      background: #fff; padding: 12px 16px;
-      display: flex; gap: 10px; flex-wrap: wrap;
-      border-bottom: 1px solid #eee;
-    }
-    #config-bar input {
-      flex: 1; min-width: 120px; padding: 8px 12px;
-      border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;
-    }
+/* ── HEADER ── */
+.top-bar {
+  background: var(--red-dark);
+  padding: 16px 20px 14px;
+  position: sticky; top: 0; z-index: 100;
+}
+.store-name {
+  font-family: var(--serif);
+  font-size: 1.5rem; font-weight: 700;
+  color: #FFFFFF; letter-spacing: .04em;
+}
+.store-tagline {
+  font-size: .72rem; color: rgba(255,255,255,.55);
+  letter-spacing: .1em; text-transform: uppercase; margin-top: 2px;
+}
+.table-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+  color: white; padding: 3px 12px; border-radius: 20px;
+  font-size: .72rem; font-weight: 500; margin-top: 8px;
+}
 
-    /* Category tabs */
-    #category-tabs {
-      display: flex; gap: 8px; padding: 12px 16px;
-      overflow-x: auto; background: #fff;
-      border-bottom: 1px solid #eee;
-    }
-    .tab-btn {
-      padding: 6px 16px; border-radius: 20px; border: 1.5px solid #e74c3c;
-      background: white; color: #e74c3c; cursor: pointer;
-      white-space: nowrap; font-size: 0.85rem; transition: all .2s;
-    }
-    .tab-btn.active { background: #e74c3c; color: white; }
+/* ── CATEGORY TABS ── */
+.cat-tabs {
+  display: flex; overflow-x: auto;
+  background: var(--cream-2); border-bottom: 1px solid var(--border);
+  padding: 0 4px;
+  scrollbar-width: none;
+  position: sticky; top: 72px; z-index: 99;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex-shrink: 0; padding: 12px 18px;
+  font-size: .8rem; font-weight: 500;
+  color: var(--muted); border: none; background: none;
+  border-bottom: 2px solid transparent; cursor: pointer;
+  transition: all 150ms; white-space: nowrap;
+}
+.cat-tab.active { color: var(--red); border-bottom-color: var(--red); font-weight: 600; }
 
-    /* Menu grid */
-    #menu-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 12px; padding: 16px;
-    }
-    .menu-card {
-      background: white; border-radius: 12px;
-      padding: 14px 12px; cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-      transition: transform .15s, box-shadow .15s;
-      position: relative;
-    }
-    .menu-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.13); }
-    .menu-card.in-cart { border: 2px solid #e74c3c; }
-    .menu-card .badge {
-      position: absolute; top: -6px; right: -6px;
-      background: #e74c3c; color: white;
-      border-radius: 50%; width: 22px; height: 22px;
-      font-size: 0.75rem; display: flex; align-items: center; justify-content: center;
-      font-weight: bold;
-    }
-    .menu-card .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
-    .menu-card .cat { font-size: 0.75rem; color: #999; margin-bottom: 6px; }
-    .menu-card .price { color: #e74c3c; font-weight: 700; font-size: 0.95rem; }
-    .menu-card .desc { font-size: 0.75rem; color: #888; margin-top: 4px; line-height: 1.3; }
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family: var(--serif); font-size: 1.2rem; font-weight: 600;
+  color: var(--text); padding: 20px 20px 8px; letter-spacing: .01em;
+}
 
-    /* Cart bottom sheet */
-    #cart-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: #e74c3c; color: white;
-      padding: 14px 20px; display: flex; align-items: center;
-      cursor: pointer; z-index: 200;
-      box-shadow: 0 -2px 12px rgba(0,0,0,0.2);
-      transform: translateY(100%); transition: transform .3s;
-    }
-    #cart-bar.show { transform: translateY(0); }
-    #cart-bar .cart-count { background: white; color: #e74c3c; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; font-size: 0.85rem; }
-    #cart-bar .cart-label { flex: 1; font-weight: 600; }
-    #cart-bar .cart-total { font-weight: 700; font-size: 1rem; }
+/* ── PRODUCT CARD ── */
+.product-card {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  background: var(--cream); cursor: pointer; transition: background 120ms;
+}
+.product-card:hover { background: var(--cream-2); }
+.prod-emoji {
+  width: 56px; height: 56px; flex-shrink: 0;
+  background: var(--cream-2); border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+}
+.prod-info { flex: 1; min-width: 0; }
+.prod-name  { font-size: .95rem; font-weight: 600; color: var(--text); }
+.prod-desc  { font-size: .78rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.prod-price { font-family: var(--mono); font-size: .9rem; font-weight: 500; color: var(--red); margin-top: 5px; }
 
-    /* Cart modal */
-    #cart-modal {
-      display: none; position: fixed; inset: 0; z-index: 300;
-      background: rgba(0,0,0,0.5);
-    }
-    #cart-modal.show { display: flex; align-items: flex-end; }
-    #cart-sheet {
-      background: white; width: 100%; border-radius: 20px 20px 0 0;
-      padding: 20px; max-height: 80vh; overflow-y: auto;
-    }
-    #cart-sheet h2 { font-size: 1.1rem; margin-bottom: 14px; }
-    .cart-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 0; border-bottom: 1px solid #f0f0f0;
-    }
-    .cart-item .ci-name { flex: 1; font-size: 0.9rem; font-weight: 500; }
-    .cart-item .ci-price { font-size: 0.85rem; color: #888; }
-    .qty-ctrl { display: flex; align-items: center; gap: 6px; }
-    .qty-ctrl button {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: 1.5px solid #e74c3c; background: white; color: #e74c3c;
-      font-size: 1rem; cursor: pointer; font-weight: bold;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .qty-ctrl span { font-weight: 600; min-width: 18px; text-align: center; }
-    .note-input {
-      width: 100%; padding: 8px; border: 1px solid #eee;
-      border-radius: 6px; font-size: 0.8rem; margin-top: 4px; resize: none;
-    }
-    #cart-summary { padding: 14px 0 0; }
-    #cart-summary .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; }
-    #cart-summary .total { font-weight: 700; font-size: 1.05rem; color: #e74c3c; }
-    #order-note { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin: 10px 0; font-size: 0.9rem; resize: none; }
-    #submit-btn {
-      width: 100%; padding: 14px; background: #e74c3c; color: white;
-      border: none; border-radius: 12px; font-size: 1rem; font-weight: 700;
-      cursor: pointer; margin-top: 6px;
-    }
-    #submit-btn:disabled { background: #ccc; cursor: not-allowed; }
-    .close-cart { float: right; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #999; }
+.prod-add {
+  flex-shrink: 0; width: 30px; height: 30px;
+  background: var(--red); color: white; border: none; border-radius: 50%;
+  font-size: 1.2rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 150ms; align-self: center; line-height: 1;
+}
+.prod-add:hover { background: var(--red-dark); transform: scale(1.08); }
 
-    /* Success screen */
-    #success-screen {
-      display: none; position: fixed; inset: 0; z-index: 400;
-      background: white; flex-direction: column;
-      align-items: center; justify-content: center; padding: 30px; text-align: center;
-    }
-    #success-screen.show { display: flex; }
-    #success-screen .icon { font-size: 4rem; margin-bottom: 16px; }
-    #success-screen h2 { font-size: 1.5rem; color: #27ae60; margin-bottom: 8px; }
-    #success-screen p { color: #666; margin-bottom: 6px; }
-    #success-screen .code { font-size: 1.3rem; font-weight: 700; color: #e74c3c; letter-spacing: 2px; margin: 10px 0; }
-    #new-order-btn {
-      margin-top: 24px; padding: 12px 32px;
-      background: #e74c3c; color: white; border: none;
-      border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;
-    }
+.prod-qty-ctrl { display: flex; align-items: center; gap: 8px; align-self: center; }
+.qty-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1.5px solid var(--border-2); background: var(--cream);
+  color: var(--text-2); cursor: pointer; font-size: .9rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 120ms;
+}
+.qty-btn:hover { background: var(--cream-2); border-color: var(--red); color: var(--red); }
+.qty-num {
+  font-family: var(--mono); font-size: .9rem; font-weight: 600;
+  color: var(--text); min-width: 16px; text-align: center;
+}
 
-    /* Status timeline */
-    .status-timeline {
-      display: flex; flex-direction: column; gap: 0;
-      margin: 20px 0; width: 100%; max-width: 280px; text-align: left;
-    }
-    .status-step {
-      display: flex; align-items: flex-start; gap: 12px;
-      position: relative;
-    }
-    .status-step:not(:last-child)::after {
-      content: ''; position: absolute; left: 11px; top: 26px;
-      width: 2px; height: 28px; background: #eee;
-    }
-    .status-step.done::after { background: #27ae60; }
-    .step-dot {
-      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-      border: 2px solid #ddd; background: white;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.7rem; margin-top: 2px;
-    }
-    .status-step.done .step-dot { background: #27ae60; border-color: #27ae60; color: white; }
-    .status-step.active .step-dot { border-color: #e74c3c; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.4); } 50% { box-shadow: 0 0 0 6px rgba(231,76,60,0); } }
-    .step-label { font-size: 0.85rem; font-weight: 600; color: #999; padding: 4px 0 20px; }
-    .status-step.done .step-label { color: #27ae60; }
-    .status-step.active .step-label { color: #e74c3c; }
-    .sse-badge { font-size: 0.72rem; color: #27ae60; margin-top: 4px; }
+/* ── VARIANT SHEET ── */
+.sheet-overlay {
+  position: fixed; inset: 0; background: rgba(28,25,23,.5);
+  z-index: 200; opacity: 0; pointer-events: none; transition: opacity 200ms;
+}
+.sheet-overlay.open { opacity: 1; pointer-events: all; }
+.sheet {
+  position: fixed; bottom: 0; left: 50%;
+  transform: translateX(-50%) translateY(110%);
+  width: 100%; max-width: 480px;
+  background: var(--cream); border-radius: 14px 14px 0 0;
+  border-top: 1px solid var(--border);
+  z-index: 201; transition: transform 280ms cubic-bezier(.32,0,.67,0);
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  box-shadow: 0 -8px 32px rgba(92,30,30,.15);
+}
+.sheet.open { transform: translateX(-50%) translateY(0); }
+.sheet-handle {
+  width: 36px; height: 4px; background: var(--border-2);
+  border-radius: 2px; margin: 10px auto 0;
+}
+.sheet-header { padding: 14px 20px 12px; border-bottom: 1px solid var(--border); }
+.sheet-title   { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; }
+.sheet-subtitle { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.variant-list { padding: 10px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.variant-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--cream);
+  cursor: pointer; transition: all 150ms;
+}
+.variant-btn:hover { border-color: var(--red); background: var(--red-light); }
+.variant-btn.oos { opacity: .45; cursor: not-allowed; }
+.variant-name  { font-size: .9rem; font-weight: 600; color: var(--text); }
+.variant-meta  { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+.variant-price { font-family: var(--mono); font-size: .9rem; font-weight: 500; color: var(--red); }
 
-    /* Loading */
-    #loading { text-align: center; padding: 40px; color: #999; }
-    .empty { text-align: center; padding: 40px; color: #bbb; }
-  </style>
+/* ── CART BAR ── */
+.cart-bar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--red-dark); color: white;
+  padding: 14px 20px 20px;
+  display: none; align-items: center; gap: 12px;
+  cursor: pointer; transition: background 150ms;
+  z-index: 150;
+  box-shadow: 0 -4px 20px rgba(92,30,30,.3);
+}
+.cart-bar.visible { display: flex; }
+.cart-bar:hover { background: #6B1010; }
+.cart-count {
+  background: white; color: var(--red-dark);
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; flex-shrink: 0; font-family: var(--mono);
+}
+.cart-label  { flex: 1; font-size: .9rem; font-weight: 500; }
+.cart-total  { font-family: var(--mono); font-size: 1rem; font-weight: 600; }
+
+/* ── CART SHEET ── */
+.cart-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+}
+.ci-info     { flex: 1; min-width: 0; }
+.ci-name     { font-size: .88rem; font-weight: 600; color: var(--text); }
+.ci-variant  { font-size: .73rem; color: var(--muted); }
+.ci-price    { font-family: var(--mono); font-size: .88rem; color: var(--red); margin-top: 2px; font-weight: 500; }
+
+/* ── ORDER FORM ── */
+.order-form  { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.form-row    { display: flex; gap: 10px; }
+.inp {
+  flex: 1; padding: 10px 13px;
+  border: 1.5px solid var(--border-2); border-radius: var(--radius);
+  background: var(--cream); color: var(--text);
+  font-family: var(--sans); font-size: .88rem;
+  outline: none; transition: border-color 150ms;
+}
+.inp:focus { border-color: var(--red); }
+.inp::placeholder { color: var(--dim); }
+
+/* ── ORDER TYPE (Dine In / Take Away) ── */
+.order-type-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.order-type-opt {
+  padding: 13px 14px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--cream);
+  cursor: pointer; transition: all 150ms; text-align: center;
+}
+.order-type-opt:hover    { border-color: var(--red-dark); background: var(--red-light); }
+.order-type-opt.selected { border-color: var(--red); background: var(--red-light); }
+.order-type-icon { font-size: 1.5rem; margin-bottom: 5px; }
+.order-type-name { font-size: .85rem; font-weight: 700; color: var(--text); }
+.order-type-desc { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+
+/* ── PAYMENT ── */
+.pay-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pay-opt {
+  padding: 12px 14px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--cream);
+  cursor: pointer; transition: all 150ms; text-align: center;
+}
+.pay-opt:hover    { border-color: var(--red-dark); background: var(--red-light); }
+.pay-opt.selected { border-color: var(--red); background: var(--red-light); }
+.pay-opt-icon { font-size: 1.4rem; margin-bottom: 4px; }
+.pay-opt-name { font-size: .82rem; font-weight: 600; color: var(--text); }
+.pay-opt-desc { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+
+/* ── SUBMIT ── */
+.submit-btn {
+  width: 100%; padding: 14px;
+  background: var(--red); color: white; border: none;
+  border-radius: var(--radius); font-family: var(--sans);
+  font-size: .95rem; font-weight: 600; cursor: pointer;
+  transition: background 150ms; letter-spacing: .01em;
+}
+.submit-btn:hover    { background: var(--red-dark); }
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── SUCCESS / STATUS SCREEN ── */
+.success-screen {
+  display: none; flex-direction: column; align-items: center;
+  justify-content: flex-start; min-height: 100vh;
+  padding: 40px 20px 48px; text-align: center;
+}
+.success-screen.show { display: flex; }
+@keyframes popIn { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
+@keyframes pulseGreen {
+  0%,100%{ box-shadow: 0 0 0 0 rgba(21,128,61,.3); }
+  50%{ box-shadow: 0 0 0 12px rgba(21,128,61,0); }
+}
+@keyframes fadeSlideUp {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── TOP STATUS HERO ── */
+.status-hero {
+  width: 100%; max-width: 360px;
+  background: var(--cream-2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px 20px 20px;
+  animation: fadeSlideUp .4s ease both;
+}
+.status-hero-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; margin: 0 auto 12px;
+  transition: all .4s;
+}
+.status-hero-icon.pending  { background:#FFF7ED; border:2px solid #FED7AA; }
+.status-hero-icon.cooking  { background:#FFFBEB; border:2px solid #FDE68A; animation: popIn .4s ease; }
+.status-hero-icon.ready    { background:var(--success-bg); border:2px solid var(--success-bd); animation: pulseGreen 1.5s ease 3; }
+.status-hero-icon.done     { background:var(--success-bg); border:2px solid var(--success-bd); }
+.status-hero-icon.rejected { background:#FEF2F2; border:2px solid var(--red-bd); }
+
+.status-hero-title {
+  font-family: var(--serif); font-size: 1.5rem; font-weight: 700;
+  color: var(--text); line-height: 1.1;
+}
+.status-hero-sub {
+  font-size: .82rem; color: var(--muted); margin-top: 6px; line-height: 1.5;
+}
+
+/* ── ETA BOX ── */
+.eta-box {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 16px; padding: 10px 14px;
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: .8rem;
+}
+.eta-col { text-align: center; flex:1; }
+.eta-label { color: var(--muted); font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.eta-val   { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--text); margin-top: 2px; }
+.eta-divider { width:1px; background: var(--border); height: 32px; flex-shrink:0; margin: 0 8px; }
+.eta-ready-val { color: var(--red); }
+.eta-ready-val.done { color: var(--success); }
+
+/* ── TIMELINE ── */
+.order-timeline {
+  width: 100%; max-width: 360px; margin-top: 16px;
+  background: var(--cream-2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px 20px;
+  animation: fadeSlideUp .5s .1s ease both;
+}
+.timeline-title {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin-bottom: 16px;
+}
+.tl-step {
+  display: flex; align-items: flex-start; gap: 14px;
+  position: relative;
+}
+.tl-step:not(:last-child)::after {
+  content: ''; position: absolute; left: 15px; top: 32px;
+  width: 2px; height: calc(100% - 4px);
+  background: var(--border); z-index: 0;
+  transition: background .4s;
+}
+.tl-step.done-line::after { background: var(--success); }
+
+.tl-dot {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .95rem; z-index: 1; transition: all .4s;
+  border: 2px solid var(--border); background: white;
+}
+.tl-dot.active   { border-color: var(--red); background: var(--red-light); animation: popIn .35s ease; }
+.tl-dot.complete { border-color: var(--success); background: var(--success-bg); }
+.tl-dot.pending  { border-color: var(--border); background: white; opacity:.5; }
+
+.tl-body { padding: 4px 0 20px; flex:1; }
+.tl-step:last-child .tl-body { padding-bottom: 0; }
+.tl-name {
+  font-size: .88rem; font-weight: 700; color: var(--text);
+  transition: color .3s;
+}
+.tl-name.muted { color: var(--dim); font-weight: 500; }
+.tl-name.green { color: var(--success); }
+.tl-desc { font-size: .75rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.tl-time { font-family: var(--mono); font-size: .7rem; color: var(--dim); margin-top: 3px; }
+
+/* ── ORDER META CARD ── */
+.order-meta-card {
+  width: 100%; max-width: 360px; margin-top: 14px;
+  background: var(--cream-2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  animation: fadeSlideUp .6s .2s ease both;
+}
+.order-code-label { font-size: .68rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.order-code-val   { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; color: var(--text); margin-top: 2px; }
+.order-type-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: .72rem; font-weight: 600;
+  background: white; border: 1px solid var(--border); color: var(--text-2);
+}
+
+.order-again-btn {
+  padding: 12px 32px; background: var(--red); color: white;
+  border: none; border-radius: var(--radius);
+  font-size: .9rem; font-weight: 600; cursor: pointer; margin-top: 20px;
+  width: 100%; max-width: 360px;
+}
+
+/* ── MISC ── */
+.empty-menu { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-menu div { font-size: 2.5rem; margin-bottom: 12px; }
+.total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px; background: var(--cream-2);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.total-label { font-size: .82rem; color: var(--muted); }
+.total-val   { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; color: var(--text); }
+.section-label {
+  padding: 14px 20px 6px; font-size: .7rem; font-weight: 600;
+  color: var(--muted); letter-spacing: .1em; text-transform: uppercase;
+}
+</style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>🍜 RamenKuu</h1>
+<!-- ══ MENU VIEW ══ -->
+<div id="menuView" style="display: none;">
+  <div class="top-bar">
+    <div class="store-name">🍜 Ramenku</div>
+    <div class="store-tagline">Japanese Ramen &amp; Eatery</div>
+    <div id="tableBadge" class="table-badge" style="display:none;">
+      <span>🪑</span><span id="tableBadgeText"></span>
+    </div>
   </div>
-  <span id="table-label">Pilih meja di bawah</span>
-</header>
-
-<div id="config-bar">
-  <input type="text" id="table-input" placeholder="No. Meja (contoh: 5)" maxlength="10" />
-  <input type="text" id="name-input" placeholder="Nama pemesan (opsional)" maxlength="50" />
+  <div class="cat-tabs" id="catTabs"></div>
+  <div id="productList"></div>
 </div>
 
-<div id="category-tabs"></div>
-<div id="menu-grid"><div id="loading">Memuat menu...</div></div>
-
-<div id="cart-bar" onclick="openCart()">
-  <div class="cart-count" id="cart-count">0</div>
+<!-- ══ CART BAR ══ -->
+<div class="cart-bar" id="cartBar" onclick="openCartSheet()">
+  <div class="cart-count" id="cartCount">0</div>
   <div class="cart-label">Lihat Pesanan</div>
-  <div class="cart-total" id="cart-total-bar">Rp 0</div>
+  <div class="cart-total" id="cartBarTotal">Rp 0</div>
 </div>
 
-<!-- Cart Modal -->
-<div id="cart-modal" onclick="closeCartOutside(event)">
-  <div id="cart-sheet">
-    <button class="close-cart" onclick="closeCart()">✕</button>
-    <h2>🛒 Pesanan Anda</h2>
-    <div id="cart-items"></div>
-    <div id="cart-summary">
-      <div class="row"><span>Total</span><span class="total" id="cart-total-text">Rp 0</span></div>
-      <textarea id="order-note" rows="2" placeholder="Catatan tambahan (opsional)..."></textarea>
-      <button id="submit-btn" onclick="submitOrder()">Kirim Pesanan</button>
+<!-- ══ VARIANT SHEET ══ -->
+<div class="sheet-overlay" id="variantOverlay" onclick="closeVariantSheet()"></div>
+<div class="sheet" id="variantSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sheetTitle"></div>
+    <div class="sheet-subtitle" id="sheetSubtitle"></div>
+  </div>
+  <div class="variant-list" id="variantList"></div>
+</div>
+
+<!-- ══ CART SHEET ══ -->
+<div class="sheet-overlay" id="cartOverlay" onclick="closeCartSheet()"></div>
+<div class="sheet" id="cartSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="sheet-title">Pesanan Anda</div>
+    <button onclick="closeCartSheet()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px;">✕</button>
+  </div>
+  <div id="cartItems" style="max-height:38vh;overflow-y:auto;"></div>
+  <div class="total-row">
+    <div class="total-label">Total Pembayaran</div>
+    <div class="total-val" id="cartSheetTotal">Rp 0</div>
+  </div>
+  <div class="order-form">
+    <div class="section-label">Tipe Pesanan</div>
+    <div class="order-type-options">
+      <div class="order-type-opt" id="type_DINEIN" onclick="selectOrderType('DINE_IN')">
+        <div class="order-type-icon">🍽️</div>
+        <div class="order-type-name">Dine In</div>
+        <div class="order-type-desc">Makan di tempat</div>
+      </div>
+      <div class="order-type-opt" id="type_TAKEAWAY" onclick="selectOrderType('TAKE_AWAY')">
+        <div class="order-type-icon">🥡</div>
+        <div class="order-type-name">Take Away</div>
+        <div class="order-type-desc">Dibawa pulang</div>
+      </div>
     </div>
+    <div class="section-label" style="margin-top:4px;">Informasi Pemesan</div>
+    <div class="form-row">
+      <input class="inp" id="custName" placeholder="Nama pemesan *" type="text">
+      <input class="inp" id="tableNo" placeholder="No. Meja (opsional)" type="text" style="max-width:110px;">
+    </div>
+    <input class="inp" id="custNote" placeholder="Catatan untuk dapur (opsional)" type="text">
+    <div class="section-label" style="margin-top:4px;">Metode Pembayaran</div>
+    <div class="pay-options">
+      <div class="pay-opt" id="pay_QRIS" onclick="selectPay('QRIS')">
+        <div class="pay-opt-icon">📱</div>
+        <div class="pay-opt-name">QRIS</div>
+        <div class="pay-opt-desc">Scan QR Code</div>
+      </div>
+      <div class="pay-opt" id="pay_TRANSFER" onclick="selectPay('TRANSFER')">
+        <div class="pay-opt-icon">🏦</div>
+        <div class="pay-opt-name">Transfer Bank</div>
+        <div class="pay-opt-desc">Via rekening</div>
+      </div>
+    </div>
+    <button class="submit-btn" id="submitBtn" onclick="submitOrder()" disabled>Kirim Pesanan</button>
+    <p style="font-size:.72rem;color:var(--dim);text-align:center;margin-top:4px;">
+      Pembayaran dilakukan ke kasir setelah pesanan dikonfirmasi
+    </p>
   </div>
 </div>
 
-<!-- Success Screen -->
-<div id="success-screen">
-  <div class="icon">✅</div>
-  <h2>Pesanan Terkirim!</h2>
-  <p>Nomor pesanan Anda:</p>
-  <div class="code" id="order-code-display"></div>
-  <div class="status-timeline">
-    <div class="status-step done" id="step-pending">
-      <div class="step-dot">✓</div>
-      <div class="step-label">Pesanan diterima</div>
-    </div>
-    <div class="status-step" id="step-processing">
-      <div class="step-dot"></div>
-      <div class="step-label">Sedang diproses dapur</div>
-    </div>
-    <div class="status-step" id="step-ready">
-      <div class="step-dot"></div>
-      <div class="step-label">Siap disajikan</div>
-    </div>
-    <div class="status-step" id="step-done">
-      <div class="step-dot"></div>
-      <div class="step-label">Selesai</div>
+<!-- ══ SUCCESS / STATUS SCREEN ══ -->
+<div class="success-screen" id="successScreen">
+
+  <!-- Hero status card -->
+  <div class="status-hero">
+    <div class="status-hero-icon pending" id="statusHeroIcon">⏳</div>
+    <div class="status-hero-title" id="statusHeroTitle">Menunggu Konfirmasi</div>
+    <div class="status-hero-sub" id="statusHeroSub">Pesanan Anda sudah masuk. Kasir sedang mengkonfirmasi…</div>
+
+    <!-- ETA row -->
+    <div class="eta-box" id="etaBox" style="display: none;">
+      <div class="eta-col">
+        <div class="eta-label">Jam Pesan</div>
+        <div class="eta-val" id="etaOrdered">--:--</div>
+      </div>
+      <div class="eta-divider"></div>
+      <div class="eta-col">
+        <div class="eta-label">Est. Siap</div>
+        <div class="eta-val eta-ready-val" id="etaReady">--:--</div>
+      </div>
+      <div class="eta-divider"></div>
+      <div class="eta-col">
+        <div class="eta-label">Status</div>
+        <div class="eta-val" id="etaStatus">⏳</div>
+      </div>
     </div>
   </div>
-  <p class="sse-badge" id="sse-status">⚡ Memantau status secara realtime...</p>
-  <button id="new-order-btn" onclick="resetOrder()">Pesan Lagi</button>
+
+  <!-- Order meta -->
+  <div class="order-meta-card">
+    <div>
+      <div class="order-code-label">Kode Pesanan</div>
+      <div class="order-code-val" id="orderCodeDisplay">---</div>
+    </div>
+    <div class="order-type-tag" id="orderTypeTag">🍽️ —</div>
+  </div>
+
+  <!-- 3-step timeline -->
+  <div class="order-timeline">
+    <div class="timeline-title">Status Pesanan</div>
+
+    <!-- Step 1 -->
+    <div class="tl-step" id="tls1">
+      <div class="tl-dot active" id="tld1">📋</div>
+      <div class="tl-body">
+        <div class="tl-name" id="tln1">Pesanan Diterima</div>
+        <div class="tl-desc">Pesanan Anda sudah masuk ke sistem</div>
+        <div class="tl-time" id="tlt1">—</div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="tl-step" id="tls2">
+      <div class="tl-dot pending" id="tld2">🍳</div>
+      <div class="tl-body">
+        <div class="tl-name muted" id="tln2">Sedang Dimasak</div>
+        <div class="tl-desc" id="tld2desc">Menunggu konfirmasi kasir</div>
+        <div class="tl-time" id="tlt2">—</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="tl-step" id="tls3">
+      <div class="tl-dot pending" id="tld3">🛎️</div>
+      <div class="tl-body">
+        <div class="tl-name muted" id="tln3">Siap Diambil</div>
+        <div class="tl-desc" id="tld3desc">Dapur belum selesai menyiapkan</div>
+        <div class="tl-time" id="tlt3">—</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="order-again-btn" onclick="resetOrder()">Pesan Lagi</button>
 </div>
 
 <script>
-  // ── CONFIG ─────────────────────────────────────────────────────────────────
-  const API_BASE = window.API_BASE || 'https://ramenkuu-server.up.railway.app';
-  // Ganti URL di atas dengan URL Railway Anda setelah deploy
+// ── CONFIG ──
+const API_BASE = 'https://ramenkuu-server.up.railway.app';
+const TABLE_FROM_URL = new URLSearchParams(location.search).get('meja') || '';
 
-  // ── STATE ──────────────────────────────────────────────────────────────────
-  let allMenus = [];
-  let cart = {};
-  let activeCategory = 'Semua';
-  let sseConn = null;
-  let currentOrderCode = null;
+// ── STATE ──
+let products = [];
+let categories = [];
+let cart = [];
+let selectedPayMethod = null;
+let selectedOrderType = null;
+let activeCatId = 'all';
+let currentOrderId = null;
+let currentOrderCode = null;
+let sseSource = null;
+let orderCreatedAt = null;
+let orderConfirmedAt = null;
 
-  // ── INIT ───────────────────────────────────────────────────────────────────
-  async function init() {
-    try {
-      const res = await fetch(`${API_BASE}/menu?available=true`);
-      allMenus = await res.json();
-      renderCategories();
-      renderMenus();
-    } catch(e) {
-      document.getElementById('loading').textContent = '❌ Gagal memuat menu. Cek koneksi internet.';
-    }
+// ── INIT ──
+async function init() {
+  if (TABLE_FROM_URL) {
+    document.getElementById('tableBadge').style.display = 'inline-flex';
+    document.getElementById('tableBadgeText').textContent = 'Meja ' + TABLE_FROM_URL;
+    document.getElementById('tableNo').value = TABLE_FROM_URL;
   }
 
-  // ── CATEGORIES ─────────────────────────────────────────────────────────────
-  function renderCategories() {
-    const cats = ['Semua', ...new Set(allMenus.map(m => m.category))];
-    const el = document.getElementById('category-tabs');
-    el.innerHTML = cats.map(c =>
-      `<button class="tab-btn ${c===activeCategory?'active':''}" onclick="filterCat('${c}')">${c}</button>`
-    ).join('');
+  document.getElementById('custName').addEventListener('input', checkSubmitBtn);
+  document.getElementById('menuView').style.display = '';
+
+  await loadMenu();
+}
+
+async function loadMenu() {
+  try {
+    const res = await fetch(`${API_BASE}/menu?available=true`);
+    if (!res.ok) throw new Error('Gagal memuat menu');
+    const data = await res.json();
+    // data is array of { id, name, category, price, description, available }
+    // Build fake category list from unique category strings
+    const catSet = new Set(data.map(m => m.category).filter(Boolean));
+    categories = Array.from(catSet).map((name, i) => ({ id: i + 1, name }));
+
+    // Normalize products to internal format
+    products = data.map(m => ({
+      id: m.id,
+      category_id: categories.find(c => c.name === m.category)?.id || 0,
+      name: m.name,
+      description: m.description || '',
+      base_price: m.price,
+      image_url: getCategoryEmoji(m.category),
+      is_active: m.available !== false,
+      variants: [{ id: m.id, product_id: m.id, name: 'Standard', price: m.price, stock: 99, min_stock: 0 }]
+    }));
+
+    renderCategoryTabs();
+    renderProducts('all');
+  } catch (e) {
+    document.getElementById('productList').innerHTML =
+      `<div class="empty-menu"><div>⚠️</div><p>Gagal memuat menu. Coba refresh halaman.</p></div>`;
+  }
+}
+
+function getCategoryEmoji(cat) {
+  if (!cat) return '🍜';
+  const c = cat.toLowerCase();
+  if (c.includes('ramen')) return '🍜';
+  if (c.includes('side') || c.includes('dish') || c.includes('sushi') || c.includes('dimsum')) return '🥟';
+  if (c.includes('minum') || c.includes('drink') || c.includes('beverage')) return '🧋';
+  return '🍜';
+}
+
+function fmtRp(n) {
+  return new Intl.NumberFormat('id-ID').format(n || 0);
+}
+
+// ── CATEGORY TABS ──
+function renderCategoryTabs() {
+  const tabs = document.getElementById('catTabs');
+  const allBtn = `<button class="cat-tab active" onclick="filterCat('all',this)">Semua</button>`;
+  const catBtns = categories.map(c =>
+    `<button class="cat-tab" onclick="filterCat(${c.id},this)">${escHtml(c.name)}</button>`
+  ).join('');
+  tabs.innerHTML = allBtn + catBtns;
+}
+
+function filterCat(catId, el) {
+  activeCatId = catId;
+  document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderProducts(catId);
+}
+
+// ── PRODUCT LIST ──
+function renderProducts(catFilter) {
+  activeCatId = catFilter;
+  const list = document.getElementById('productList');
+  const filtered = catFilter === 'all'
+    ? products
+    : products.filter(p => p.category_id == catFilter);
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-menu"><div>🍜</div><p>Belum ada menu tersedia</p></div>`;
+    return;
   }
 
-  function filterCat(cat) {
-    activeCategory = cat;
-    renderCategories();
-    renderMenus();
-  }
-
-  // ── MENUS ──────────────────────────────────────────────────────────────────
-  function renderMenus() {
-    const filtered = activeCategory === 'Semua'
-      ? allMenus
-      : allMenus.filter(m => m.category === activeCategory);
-
-    const grid = document.getElementById('menu-grid');
-    if (!filtered.length) {
-      grid.innerHTML = '<div class="empty">Menu tidak tersedia</div>';
-      return;
-    }
-    grid.innerHTML = filtered.map(m => {
-      const inCart = cart[m.id];
-      return `
-        <div class="menu-card ${inCart?'in-cart':''}" onclick="addToCart(${m.id})">
-          ${inCart ? `<div class="badge">${inCart.qty}</div>` : ''}
-          <div class="name">${m.name}</div>
-          <div class="cat">${m.category}</div>
-          <div class="price">Rp ${m.price.toLocaleString('id-ID')}</div>
-          ${m.description ? `<div class="desc">${m.description}</div>` : ''}
-        </div>`;
-    }).join('');
-  }
-
-  // ── CART ───────────────────────────────────────────────────────────────────
-  function addToCart(menuId) {
-    const menu = allMenus.find(m => m.id === menuId);
-    if (!menu) return;
-    if (cart[menuId]) {
-      cart[menuId].qty++;
-    } else {
-      cart[menuId] = { menu, qty: 1, note: '' };
-    }
-    updateCartUI();
-    renderMenus();
-  }
-
-  function updateCartUI() {
-    const items = Object.values(cart);
-    const totalQty = items.reduce((s, i) => s + i.qty, 0);
-    const totalPrice = items.reduce((s, i) => s + i.menu.price * i.qty, 0);
-    const bar = document.getElementById('cart-bar');
-    document.getElementById('cart-count').textContent = totalQty;
-    document.getElementById('cart-total-bar').textContent = 'Rp ' + totalPrice.toLocaleString('id-ID');
-    document.getElementById('cart-total-text').textContent = 'Rp ' + totalPrice.toLocaleString('id-ID');
-    bar.classList.toggle('show', totalQty > 0);
-  }
-
-  function openCart() {
-    renderCartItems();
-    document.getElementById('cart-modal').classList.add('show');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeCart() {
-    document.getElementById('cart-modal').classList.remove('show');
-    document.body.style.overflow = '';
-  }
-
-  function closeCartOutside(e) {
-    if (e.target === document.getElementById('cart-modal')) closeCart();
-  }
-
-  function renderCartItems() {
-    const items = Object.values(cart);
-    const el = document.getElementById('cart-items');
-    if (!items.length) { el.innerHTML = '<div class="empty">Keranjang kosong</div>'; return; }
-    el.innerHTML = items.map(item => `
-      <div class="cart-item">
-        <div style="flex:1">
-          <div class="ci-name">${item.menu.name}</div>
-          <div class="ci-price">Rp ${item.menu.price.toLocaleString('id-ID')} × ${item.qty} = <b>Rp ${(item.menu.price*item.qty).toLocaleString('id-ID')}</b></div>
-          <textarea class="note-input" rows="1" placeholder="Catatan item..." onchange="setItemNote(${item.menu.id}, this.value)">${item.note}</textarea>
-        </div>
-        <div class="qty-ctrl">
-          <button onclick="changeQty(${item.menu.id}, -1)">−</button>
-          <span>${item.qty}</span>
-          <button onclick="changeQty(${item.menu.id}, 1)">+</button>
-        </div>
-      </div>`).join('');
-  }
-
-  function changeQty(menuId, delta) {
-    if (!cart[menuId]) return;
-    cart[menuId].qty += delta;
-    if (cart[menuId].qty <= 0) delete cart[menuId];
-    updateCartUI();
-    renderCartItems();
-    renderMenus();
-  }
-
-  function setItemNote(menuId, val) {
-    if (cart[menuId]) cart[menuId].note = val;
-  }
-
-  // ── SUBMIT ORDER ───────────────────────────────────────────────────────────
-  async function submitOrder() {
-    const tableNo = document.getElementById('table-input').value.trim();
-    if (!tableNo) { alert('Isi nomor meja dulu!'); closeCart(); document.getElementById('table-input').focus(); return; }
-
-    const items = Object.values(cart);
-    if (!items.length) { alert('Keranjang kosong!'); return; }
-
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true;
-    btn.textContent = 'Mengirim...';
-
-    const payload = {
-      table_no: tableNo,
-      customer_name: document.getElementById('name-input').value.trim(),
-      note: document.getElementById('order-note').value.trim(),
-      items: items.map(i => ({ menu_id: i.menu.id, qty: i.qty, note: i.note }))
-    };
-
-    try {
-      const res = await fetch(`${API_BASE}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengirim');
-
-      closeCart();
-      currentOrderCode = data.order.order_code;
-      document.getElementById('order-code-display').textContent = currentOrderCode;
-      resetStatusTimeline();
-      document.getElementById('success-screen').classList.add('show');
-      startOrderTracking(currentOrderCode);
-    } catch(e) {
-      alert('❌ ' + e.message);
-      btn.disabled = false;
-      btn.textContent = 'Kirim Pesanan';
-    }
-  }
-
-  function resetOrder() {
-    if (sseConn) { sseConn.close(); sseConn = null; }
-    cart = {};
-    currentOrderCode = null;
-    document.getElementById('table-input').value = '';
-    document.getElementById('name-input').value = '';
-    document.getElementById('order-note').value = '';
-    document.getElementById('success-screen').classList.remove('show');
-    updateCartUI();
-    renderMenus();
-  }
-
-  // ── ORDER TRACKING ─────────────────────────────────────────────────────────
-  const STATUS_ORDER = ['pending', 'processing', 'ready', 'done'];
-  const STEP_IDS = { pending: 'step-pending', processing: 'step-processing', ready: 'step-ready', done: 'step-done' };
-
-  function resetStatusTimeline() {
-    Object.values(STEP_IDS).forEach(id => {
-      const el = document.getElementById(id);
-      el.classList.remove('done', 'active');
-    });
-    document.getElementById('step-pending').classList.add('done');
-    document.getElementById('sse-status').textContent = '⚡ Memantau status secara realtime...';
-  }
-
-  function applyStatus(status) {
-    const idx = STATUS_ORDER.indexOf(status);
-    STATUS_ORDER.forEach((s, i) => {
-      const el = document.getElementById(STEP_IDS[s]);
-      if (i < idx) { el.classList.add('done'); el.classList.remove('active'); }
-      else if (i === idx) { el.classList.add('done'); el.classList.remove('active'); }
-      else { el.classList.remove('done', 'active'); }
-    });
-    if (status === 'done') {
-      document.getElementById('sse-status').textContent = '✅ Pesanan selesai!';
-    }
-  }
-
-  function startOrderTracking(orderCode) {
-    if (sseConn) sseConn.close();
-    sseConn = new EventSource(`${API_BASE}/events`);
-
-    sseConn.addEventListener('order_status', (e) => {
-      const data = JSON.parse(e.data);
-      if (data.order_code !== orderCode) return;
-      applyStatus(data.status);
-      if (data.status === 'done' || data.status === 'cancelled') {
-        sseConn.close(); sseConn = null;
-        if (data.status === 'cancelled') {
-          document.getElementById('sse-status').textContent = '❌ Pesanan dibatalkan oleh kasir.';
-        }
-      }
-    });
-
-    sseConn.onerror = () => {
-      document.getElementById('sse-status').textContent = '🔴 Koneksi terputus, mencoba ulang...';
-    };
-  }
-
-  // ── TABLE LABEL ────────────────────────────────────────────────────────────
-  document.getElementById('table-input').addEventListener('input', function() {
-    const lbl = document.getElementById('table-label');
-    lbl.textContent = this.value ? `Meja ${this.value}` : 'Pilih meja di bawah';
+  // Group by category
+  const grouped = {};
+  filtered.forEach(p => {
+    const cat = categories.find(c => c.id === p.category_id);
+    const key = cat ? cat.name : 'Lainnya';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(p);
   });
 
-  init();
+  list.innerHTML = Object.entries(grouped).map(([catName, prods]) =>
+    `<div class="section-title">${escHtml(catName)}</div>` +
+    prods.map(p => renderProductCard(p)).join('')
+  ).join('');
+}
+
+function renderProductCard(p) {
+  const minPrice = p.base_price || 0;
+  const inCart = cart.filter(i => i.product_id === p.id).reduce((s, i) => s + i.qty, 0);
+
+  const rightCtrl = inCart > 0
+    ? `<div class="prod-qty-ctrl">
+         <button class="qty-btn" onclick="event.stopPropagation();removeOne(${p.id})">−</button>
+         <span class="qty-num">${inCart}</span>
+         <button class="qty-btn" onclick="event.stopPropagation();pickProduct(${p.id})">+</button>
+       </div>`
+    : `<button class="prod-add" onclick="event.stopPropagation();pickProduct(${p.id})">+</button>`;
+
+  return `<div class="product-card" onclick="pickProduct(${p.id})">
+    <div class="prod-emoji">${p.image_url || '🍜'}</div>
+    <div class="prod-info">
+      <div class="prod-name">${escHtml(p.name)}</div>
+      ${p.description ? `<div class="prod-desc">${escHtml(p.description)}</div>` : ''}
+      <div class="prod-price">Rp ${fmtRp(minPrice)}</div>
+    </div>
+    ${rightCtrl}
+  </div>`;
+}
+
+// ── VARIANT PICKER ──
+function pickProduct(productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+  const variants = p.variants || [];
+  if (variants.length <= 1) {
+    const v = variants[0] || { id: p.id, price: p.base_price, name: 'Standard', stock: 99 };
+    addToCart(p, v);
+    return;
+  }
+  document.getElementById('sheetTitle').textContent = p.name;
+  document.getElementById('sheetSubtitle').textContent = p.description || 'Pilih varian';
+  document.getElementById('variantList').innerHTML = variants.map(v => `
+    <div class="variant-btn" onclick="addToCart_v(${p.id},${v.id})">
+      <div>
+        <div class="variant-name">${escHtml(v.name)}</div>
+      </div>
+      <div class="variant-price">Rp ${fmtRp(v.price)}</div>
+    </div>`).join('');
+  openVariantSheet();
+}
+
+function addToCart_v(productId, variantId) {
+  const p = products.find(x => x.id === productId);
+  const v = p && p.variants ? p.variants.find(x => x.id === variantId) : null;
+  if (p && v) { addToCart(p, v); closeVariantSheet(); }
+}
+
+function addToCart(p, v) {
+  const existing = cart.find(i => i.variant_id === v.id);
+  if (existing) {
+    existing.qty++;
+    existing.subtotal = existing.qty * existing.price;
+  } else {
+    cart.push({
+      id: Date.now() + Math.random(),
+      product_id: p.id,
+      variant_id: v.id,
+      name: p.name,
+      variant_name: v.name,
+      price: v.price,
+      qty: 1,
+      subtotal: v.price
+    });
+  }
+  updateCartUI();
+  renderProducts(activeCatId);
+}
+
+function removeOne(productId) {
+  const items = cart.filter(i => i.product_id === productId);
+  if (!items.length) return;
+  const last = items[items.length - 1];
+  last.qty--;
+  if (last.qty <= 0) cart = cart.filter(i => i.id !== last.id);
+  else last.subtotal = last.qty * last.price;
+  updateCartUI();
+  renderProducts(activeCatId);
+}
+
+function getTotal()    { return cart.reduce((s, i) => s + i.subtotal, 0); }
+function getTotalQty() { return cart.reduce((s, i) => s + i.qty, 0); }
+
+function updateCartUI() {
+  const total = getTotal();
+  const qty = getTotalQty();
+  const bar = document.getElementById('cartBar');
+  bar.classList.toggle('visible', qty > 0);
+  document.getElementById('cartCount').textContent = qty;
+  document.getElementById('cartBarTotal').textContent = 'Rp ' + fmtRp(total);
+  document.getElementById('cartSheetTotal').textContent = 'Rp ' + fmtRp(total);
+  renderCartItems();
+  checkSubmitBtn();
+}
+
+function renderCartItems() {
+  const el = document.getElementById('cartItems');
+  if (!cart.length) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--dim);font-size:.85rem;">Belum ada item</div>`;
+    return;
+  }
+  el.innerHTML = cart.map(i => `
+    <div class="cart-item">
+      <div class="ci-info">
+        <div class="ci-name">${escHtml(i.name)}</div>
+        <div class="ci-variant">${escHtml(i.variant_name)}</div>
+        <div class="ci-price">Rp ${fmtRp(i.subtotal)}</div>
+      </div>
+      <div class="prod-qty-ctrl">
+        <button class="qty-btn" onclick="updateCartQty(${JSON.stringify(i.id)},${i.qty - 1})">−</button>
+        <span class="qty-num">${i.qty}</span>
+        <button class="qty-btn" onclick="updateCartQty(${JSON.stringify(i.id)},${i.qty + 1})">+</button>
+      </div>
+    </div>`).join('');
+}
+
+function updateCartQty(itemId, qty) {
+  if (qty <= 0) {
+    cart = cart.filter(i => i.id !== itemId);
+  } else {
+    const item = cart.find(i => i.id === itemId);
+    if (item) { item.qty = qty; item.subtotal = qty * item.price; }
+  }
+  updateCartUI();
+  renderProducts(activeCatId);
+}
+
+// ── SHEET HELPERS ──
+function openVariantSheet() {
+  document.getElementById('variantOverlay').classList.add('open');
+  document.getElementById('variantSheet').classList.add('open');
+}
+function closeVariantSheet() {
+  document.getElementById('variantOverlay').classList.remove('open');
+  document.getElementById('variantSheet').classList.remove('open');
+}
+function openCartSheet() {
+  document.getElementById('cartOverlay').classList.add('open');
+  document.getElementById('cartSheet').classList.add('open');
+}
+function closeCartSheet() {
+  document.getElementById('cartOverlay').classList.remove('open');
+  document.getElementById('cartSheet').classList.remove('open');
+}
+
+// ── ORDER TYPE ──
+function selectOrderType(type) {
+  selectedOrderType = type;
+  document.querySelectorAll('.order-type-opt').forEach(el => el.classList.remove('selected'));
+  const map = { 'DINE_IN': 'type_DINEIN', 'TAKE_AWAY': 'type_TAKEAWAY' };
+  const el = document.getElementById(map[type]);
+  if (el) el.classList.add('selected');
+  const tableInput = document.getElementById('tableNo');
+  if (tableInput) {
+    tableInput.placeholder = type === 'DINE_IN' ? 'No. Meja *' : 'No. Meja (opsional)';
+  }
+  checkSubmitBtn();
+}
+
+// ── PAYMENT ──
+function selectPay(method) {
+  selectedPayMethod = method;
+  document.querySelectorAll('.pay-opt').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('pay_' + method);
+  if (el) el.classList.add('selected');
+  checkSubmitBtn();
+}
+
+function checkSubmitBtn() {
+  const name = (document.getElementById('custName')?.value || '').trim();
+  const ok = cart.length > 0 && selectedPayMethod && selectedOrderType && name;
+  const btn = document.getElementById('submitBtn');
+  if (!btn) return;
+  btn.disabled = !ok;
+  btn.textContent = ok
+    ? 'Kirim Pesanan — Rp ' + fmtRp(getTotal())
+    : 'Kirim Pesanan';
+}
+
+// ── SUBMIT ──
+async function submitOrder() {
+  const name = (document.getElementById('custName')?.value || '').trim();
+  const tableNo = (document.getElementById('tableNo')?.value || '').trim();
+  const note = (document.getElementById('custNote')?.value || '').trim();
+  if (!name || !cart.length || !selectedPayMethod || !selectedOrderType) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Mengirim…';
+
+  try {
+    const payload = {
+      table_no: tableNo || null,
+      customer_name: name,
+      note: note || null,
+      items: cart.map(i => ({ menu_id: i.product_id, qty: i.qty, note: null }))
+    };
+
+    const res = await fetch(`${API_BASE}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Gagal mengirim pesanan');
+    }
+
+    const data = await res.json();
+    const order = data.order || data;
+
+    currentOrderId = order.id;
+    currentOrderCode = order.order_code;
+    orderCreatedAt = new Date();
+    orderConfirmedAt = null;
+
+    // Show success screen
+    document.getElementById('orderCodeDisplay').textContent = order.order_code || currentOrderCode;
+    const typeTag = document.getElementById('orderTypeTag');
+    if (typeTag) typeTag.innerHTML = selectedOrderType === 'DINE_IN' ? '🍽️ Dine In' : '🥡 Take Away';
+
+    document.getElementById('menuView').style.display = 'none';
+    document.getElementById('cartBar').style.display = 'none';
+    closeCartSheet();
+    closeVariantSheet();
+    document.getElementById('successScreen').classList.add('show');
+
+    updateStatusDisplay('PENDING');
+    connectSSE(order.id);
+  } catch (e) {
+    btn.disabled = false;
+    checkSubmitBtn();
+    alert('Gagal mengirim pesanan: ' + e.message);
+  }
+}
+
+// ── SSE STATUS ──
+function connectSSE(orderId) {
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  try {
+    sseSource = new EventSource(`${API_BASE}/events`);
+    sseSource.addEventListener('order_status', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        // Match by order id or order_code
+        if (data.id == orderId || data.order_id == orderId || data.order_code === currentOrderCode) {
+          const status = (data.status || '').toUpperCase();
+          if (status === 'CONFIRMED') {
+            orderConfirmedAt = new Date();
+          }
+          updateStatusDisplay(status);
+          if (['DONE', 'REJECTED', 'READY'].includes(status)) {
+            // Keep listening for DONE if READY
+            if (status === 'DONE' || status === 'REJECTED') {
+              sseSource.close();
+              sseSource = null;
+            }
+          }
+        }
+      } catch(err) {}
+    });
+    sseSource.onerror = () => {
+      // Reconnect after 5 seconds
+      setTimeout(() => { if (currentOrderId) connectSSE(currentOrderId); }, 5000);
+    };
+  } catch(e) {}
+}
+
+// ── HELPERS ──
+function fmtTime(d) {
+  if (!d) return '';
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return h + ':' + m;
+}
+function addMinutes(d, min) {
+  return new Date(d.getTime() + min * 60000);
+}
+
+function tlSet(step, state) {
+  const dot = document.getElementById('tld' + step);
+  const name = document.getElementById('tln' + step);
+  if (!dot) return;
+  dot.className = 'tl-dot ' + state;
+  if (name) {
+    name.className = 'tl-name' + (state === 'pending' ? ' muted' : state === 'complete' ? ' green' : '');
+  }
+}
+function tlLineDone(step, yes) {
+  const el = document.getElementById('tls' + step);
+  if (!el) return;
+  if (yes) el.classList.add('done-line'); else el.classList.remove('done-line');
+}
+function tlTime(step, txt) {
+  const el = document.getElementById('tlt' + step);
+  if (el) el.textContent = txt;
+}
+function tlDesc(step, txt) {
+  const el = document.getElementById('tld' + step + 'desc');
+  if (el) el.textContent = txt;
+}
+
+function updateStatusDisplay(status) {
+  const heroIcon = document.getElementById('statusHeroIcon');
+  const heroTitle = document.getElementById('statusHeroTitle');
+  const heroSub = document.getElementById('statusHeroSub');
+  const etaBox = document.getElementById('etaBox');
+  const etaOrdered = document.getElementById('etaOrdered');
+  const etaReady = document.getElementById('etaReady');
+  const etaStatus = document.getElementById('etaStatus');
+
+  if (status === 'PENDING') {
+    if (heroIcon)  { heroIcon.className = 'status-hero-icon pending'; heroIcon.textContent = '⏳'; }
+    if (heroTitle) heroTitle.textContent = 'Menunggu Konfirmasi';
+    if (heroSub)   heroSub.textContent   = 'Pesanan Anda sudah masuk. Kasir sedang mengkonfirmasi…';
+    if (etaBox)    etaBox.style.display  = 'none';
+    tlSet(1, 'active'); tlSet(2, 'pending'); tlSet(3, 'pending');
+    tlLineDone(1, false); tlLineDone(2, false);
+    tlDesc(2, 'Menunggu konfirmasi kasir');
+    tlDesc(3, 'Dapur belum selesai menyiapkan');
+    if (orderCreatedAt) tlTime(1, 'Pukul ' + fmtTime(orderCreatedAt));
+
+  } else if (status === 'CONFIRMED') {
+    if (!orderConfirmedAt) orderConfirmedAt = new Date();
+    const etaTime = addMinutes(orderConfirmedAt, 15);
+    if (heroIcon)  { heroIcon.className = 'status-hero-icon cooking'; heroIcon.textContent = '👨‍🍳'; }
+    if (heroTitle) heroTitle.textContent = 'Sedang Dimasak';
+    if (heroSub)   heroSub.textContent   = 'Dapur sedang menyiapkan pesanan Anda dengan penuh semangat!';
+    if (etaBox)    etaBox.style.display  = 'flex';
+    if (etaOrdered && orderCreatedAt) etaOrdered.textContent = fmtTime(orderCreatedAt);
+    if (etaReady)  { etaReady.textContent = '~' + fmtTime(etaTime); etaReady.className = 'eta-val eta-ready-val'; }
+    if (etaStatus) etaStatus.textContent = '🍳';
+    tlSet(1, 'complete'); tlSet(2, 'active'); tlSet(3, 'pending');
+    tlLineDone(1, true); tlLineDone(2, false);
+    if (orderCreatedAt)   tlTime(1, 'Pukul ' + fmtTime(orderCreatedAt));
+    if (orderConfirmedAt) tlTime(2, 'Dikonfirmasi pukul ' + fmtTime(orderConfirmedAt) + ' · Est. siap ~' + fmtTime(etaTime));
+    tlDesc(2, 'Dapur sedang menyiapkan pesanan Anda');
+    tlDesc(3, 'Estimasi siap pukul ' + fmtTime(etaTime));
+
+  } else if (status === 'READY') {
+    const readyNow = new Date();
+    if (heroIcon)  { heroIcon.className = 'status-hero-icon ready'; heroIcon.textContent = '🛎️'; }
+    if (heroTitle) heroTitle.textContent = 'Pesanan Siap Diambil!';
+    if (heroSub)   heroSub.textContent   = selectedOrderType === 'TAKE_AWAY'
+      ? 'Pesanan Anda siap dibawa pulang. Silakan ke kasir! 🥡'
+      : 'Pesanan Anda siap. Selamat menikmati! 🍜';
+    if (etaBox)    etaBox.style.display  = 'flex';
+    if (etaOrdered && orderCreatedAt) etaOrdered.textContent = fmtTime(orderCreatedAt);
+    if (etaReady)  { etaReady.textContent = fmtTime(readyNow); etaReady.className = 'eta-val eta-ready-val done'; }
+    if (etaStatus) etaStatus.textContent = '✅';
+    tlSet(1, 'complete'); tlSet(2, 'complete'); tlSet(3, 'active');
+    tlLineDone(1, true); tlLineDone(2, true);
+    if (orderCreatedAt)   tlTime(1, 'Pukul ' + fmtTime(orderCreatedAt));
+    if (orderConfirmedAt) tlTime(2, 'Pukul ' + fmtTime(orderConfirmedAt));
+    tlTime(3, 'Siap pukul ' + fmtTime(readyNow) + ' 🎉');
+    tlDesc(2, 'Pesanan telah selesai dimasak');
+    tlDesc(3, 'Silakan ambil pesanan Anda sekarang!');
+
+  } else if (status === 'DONE') {
+    if (heroIcon)  { heroIcon.className = 'status-hero-icon done'; heroIcon.textContent = '🎉'; }
+    if (heroTitle) heroTitle.textContent = 'Pesanan Selesai';
+    if (heroSub)   heroSub.textContent   = 'Terima kasih sudah makan di Ramenku!';
+    tlSet(1, 'complete'); tlSet(2, 'complete'); tlSet(3, 'complete');
+    tlLineDone(1, true); tlLineDone(2, true);
+
+  } else if (status === 'REJECTED') {
+    if (heroIcon)  { heroIcon.className = 'status-hero-icon rejected'; heroIcon.textContent = '❌'; }
+    if (heroTitle) heroTitle.textContent = 'Pesanan Dibatalkan';
+    if (heroSub)   heroSub.textContent   = 'Mohon hubungi kasir untuk informasi lebih lanjut.';
+    if (sseSource) { sseSource.close(); sseSource = null; }
+  }
+}
+
+function resetOrder() {
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  cart              = [];
+  selectedPayMethod = null;
+  selectedOrderType = null;
+  currentOrderId    = null;
+  currentOrderCode  = null;
+  orderCreatedAt    = null;
+  orderConfirmedAt  = null;
+  activeCatId       = 'all';
+
+  const custName = document.getElementById('custName');
+  const custNote = document.getElementById('custNote');
+  const tableNo  = document.getElementById('tableNo');
+  if (custName) custName.value = '';
+  if (custNote) custNote.value = '';
+  if (tableNo)  tableNo.value  = TABLE_FROM_URL || '';
+
+  document.querySelectorAll('.pay-opt').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.order-type-opt').forEach(el => el.classList.remove('selected'));
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = 'Kirim Pesanan';
+  document.getElementById('successScreen').classList.remove('show');
+  document.getElementById('menuView').style.display = '';
+  document.getElementById('cartBar').style.display  = '';
+  updateCartUI();
+  renderProducts('all');
+  // Rebuild category tabs
+  const tabs = document.getElementById('catTabs');
+  if (tabs.children.length > 0) {
+    tabs.children[0].classList.add('active');
+    Array.from(tabs.children).slice(1).forEach(b => b.classList.remove('active'));
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', init);
 </script>
-</body>
-</html>
+
+
+</body></html>
